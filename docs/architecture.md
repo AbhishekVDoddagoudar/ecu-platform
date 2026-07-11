@@ -1,8 +1,8 @@
 # ECU Platform Architecture
-
+This repository is intended as an educational and portfolio project to demonstrate embedded software design principles commonly used in automotive Electronic Control Units (ECUs). The emphasis is on clean architecture, reusable modules, and production-oriented coding practices rather than compliance with any commercial AUTOSAR implementation.
 ## Long-Term Vision
 
-The ECU platform aspires to become a modular, scalable, and standardized framework for automotive embedded systems. Our vision is to:
+The ECU platform aspires to become a modular, scalable, and modular software platform inspired by the AUTOSAR Classic layered architecture. Our vision is to:
 
 - **Enhance Safety & Reliability**: Build a robust foundation that meets automotive safety standards (ISO 26262) and enables real-time, deterministic control of vehicle subsystems.
 

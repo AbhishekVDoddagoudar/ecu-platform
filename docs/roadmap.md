@@ -13,7 +13,7 @@ Each module will be developed incrementally with clean APIs, documentation, unit
 # Development Roadmap
 
 ## Milestone 0 - Project Foundation
-Status: ✅ Completed
+Status: Completed
 
 - [x] Create GitHub repository
 - [x] Define project structure
@@ -25,7 +25,7 @@ Status: ✅ Completed
 ---
 
 ## Milestone 1 - Embedded Utility Library
-Status: 🚧 In Progress
+Status: In Progress
 
 Modules
 
@@ -177,9 +177,6 @@ This project follows the following principles:
 
 # Current Progress
 
-Overall Progress
-0%
-
 Current Milestone
 
 Milestone 1 - Embedded Utility Library
@@ -187,3 +184,7 @@ Milestone 1 - Embedded Utility Library
 Current Module
 
 Bit Utilities
+
+# Current Version
+
+v0.1.0

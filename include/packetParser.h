@@ -7,12 +7,13 @@
  * @date   July 2026
  ******************************************************************************/
 
+#pragma once
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <crc16.h>
 
-#pragma once
 
 #define SIMPLEPKT_HDR 0xAA55 /**< Header for SimplePkt */
 
@@ -58,3 +59,5 @@ typedef struct
  * @return PacketStatus_t Status of the packet parsing operation
  */
 PacketStatus_t parseExamplePkt(const uint8_t *packet, size_t packetLen, ParsedExamplePkt_t *parsedPkt);
+
+/********************************************END OF packetParser.h**********************************/

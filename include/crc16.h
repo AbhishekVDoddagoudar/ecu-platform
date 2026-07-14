@@ -39,4 +39,4 @@ uint16_t crc16Calculate(const uint8_t *data, size_t length);
  * @note Implements the CRC16-CCITT-FALSE variant, allowing incremental updates.
  */
 uint16_t crc16Update(uint16_t currentCRC, const uint8_t *data, size_t length);
-/**************************************** END OF crc16.h ****************************************/
+/**************************************** END OF crc16.h *******************************************/

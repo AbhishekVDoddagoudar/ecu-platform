@@ -9,6 +9,21 @@
 
 #include <packetParser.h>
 
+/**
+ * @brief Parse an example packet.
+ * 
+ * @details This function parses an example packet, extracting the payload length,
+ *         payload data, and validating the CRC checksum. It checks for valid packet
+ *         structure and integrity.
+ *
+ * @param packet Pointer to the packet data.
+ * @param packetLen Length of the packet data.
+ * @param parsedPkt Pointer to the structure to store the parsed packet information.
+ * 
+ * @exception None
+ * 
+ * @return PacketStatus_t Status of the parsing operation.
+ */
 PacketStatus_t parseExamplePkt(const uint8_t *packet, size_t packetLen, ParsedExamplePkt_t *parsedPkt)
 {
     if (packetLen < 5) // Minimum length: 2 bytes header + 1 byte length + 2 byte CRC
@@ -48,3 +63,6 @@ PacketStatus_t parseExamplePkt(const uint8_t *packet, size_t packetLen, ParsedEx
     parsedPkt->isCkSumValid = true;
     return PACKET_STATUS_OK;
 }
+
+
+/****************************************END OF packetParser.c****************************************/

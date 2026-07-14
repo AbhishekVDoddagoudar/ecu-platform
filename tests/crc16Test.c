@@ -21,6 +21,7 @@ static int passedTests = 0;
         totalTests++;                                         \
         if (cond)                                             \
         {                                                     \
+            printf("  PASS (line %d): %s\n", __LINE__, desc); \
             passedTests++;                                    \
         }                                                     \
         else                                                  \

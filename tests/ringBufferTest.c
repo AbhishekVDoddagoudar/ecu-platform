@@ -44,12 +44,12 @@ static void testInit(void)
     TEST_ASSERT(rb.head == 0, "head starts at 0");
     TEST_ASSERT(rb.tail == 0, "tail starts at 0");
 
-    TEST_ASSERT(ringBufferInit(NULL, storage, sizeof(storage)) == RING_BUFFER_NULL_POINTER,
-                "init with NULL ringBuffer pointer returns RING_BUFFER_NULL_POINTER");
-    TEST_ASSERT(ringBufferInit(&rb, NULL, sizeof(storage)) == RING_BUFFER_NULL_POINTER,
-                "init with NULL buffer pointer returns RING_BUFFER_NULL_POINTER");
-    TEST_ASSERT(ringBufferInit(&rb, storage, 0) == RING_BUFFER_NULL_POINTER,
-                "init with zero size returns RING_BUFFER_NULL_POINTER");
+    TEST_ASSERT(ringBufferInit(NULL, storage, sizeof(storage)) == RING_BUFFER_INVALID_PARAMETER,
+                "init with NULL ringBuffer pointer returns RING_BUFFER_INVALID_PARAMETER");
+    TEST_ASSERT(ringBufferInit(&rb, NULL, sizeof(storage)) == RING_BUFFER_INVALID_PARAMETER,
+                "init with NULL buffer pointer returns RING_BUFFER_INVALID_PARAMETER");
+    TEST_ASSERT(ringBufferInit(&rb, storage, 0) == RING_BUFFER_INVALID_PARAMETER,
+                "init with zero size returns RING_BUFFER_INVALID_PARAMETER");
 }
 
 static void testPushPopBasic(void)

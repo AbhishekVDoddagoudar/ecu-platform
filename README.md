@@ -17,6 +17,18 @@ The purpose of this project is to understand embedded software architecture by i
 
 ---
 
+## Features
+
+### Bit Utility
+- Set bit
+- Clear bit
+- Toggle bit
+- Check if bit is set
+- Extract bits
+- Insert bits
+
+---
+
 ## Planned Modules
 
 - CAN Driver
@@ -39,9 +51,19 @@ The purpose of this project is to understand embedded software architecture by i
 
 ---
 
+
 ## Build
 
-Coming Soon
+cmake -S . -B builds
+cmake --build builds/ --target all
+
+## Run Tests
+
+cd builds
+./bitUtilsTest 
+./crc16Test
+./ringBufferTest
+./packetParserTest
 
 ---
 

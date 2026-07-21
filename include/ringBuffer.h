@@ -4,18 +4,19 @@
  *
  * @author Abhishek Doddagoudar
  * @date July 2026
- ******************************************************************************/
-
-/**
+ * 
  * Implementation Notes:
  *
  * This ring buffer uses the one-empty-slot technique to distinguish
  * between full and empty states.
  *
  * A buffer of capacity N can store a maximum of (N - 1) bytes.
- */
+ * 
+******************************************************************************/
 
-#pragma once
+#ifndef RING_BUFFER_H
+
+#define RING_BUFFER_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -116,5 +117,8 @@ RingBufferStatus_t ringBufferGetSize(const RingBuffer_t *ringBuffer, size_t *cap
  * @return RingBufferStatus_t Status of the operation.
  */
 RingBufferStatus_t ringBufferGetCapacity(const RingBuffer_t *ringBuffer, size_t *capacity);
+
+
+#endif
 
 /********************************************END OF ringBuffer.h************************************/

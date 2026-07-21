@@ -28,6 +28,7 @@ target_compile_options(ecuplatform PRIVATE
     -Wall
     -Wextra
     -Wpedantic
+    -Werror
 
 )
 
@@ -56,7 +57,7 @@ target_link_libraries(packetParserTest
 )
 
 add_executable(ringBufferTest
-    tests/testRingBuffer.c
+    tests/ringBufferTest.c
 )
 
 target_link_libraries(ringBufferTest

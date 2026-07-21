@@ -6,7 +6,10 @@
  *
  * @date   July 2026
  ******************************************************************************/
-#pragma once
+
+ #ifndef CRC16_H
+
+#define CRC16_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -39,4 +42,7 @@ uint16_t crc16Calculate(const uint8_t *data, size_t length);
  * @note Implements the CRC16-CCITT-FALSE variant, allowing incremental updates.
  */
 uint16_t crc16Update(uint16_t currentCRC, const uint8_t *data, size_t length);
+
+#endif
+
 /**************************************** END OF crc16.h *******************************************/

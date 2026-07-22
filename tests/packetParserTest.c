@@ -55,10 +55,14 @@ static size_t buildValidPacket(uint8_t *buf, const uint8_t *payload, uint8_t pay
     }
 
     size_t crcSpan = (size_t)(3 + payloadLen);
-    uint16_t crc = crc16Calculate(buf, crcSpan);
+    uint16_t crc = 0;
+    CRC16_Status_t crcSts = crc16Compute(buf, crcSpan, &crc);
 
-    buf[3 + payloadLen] = (uint8_t)(crc >> 8);
-    buf[4 + payloadLen] = (uint8_t)(crc & 0xFF);
+    if (CRC16_SUCCESS == crcSts)
+    {   
+        buf[3 + payloadLen] = (uint8_t)(crc >> 8);
+        buf[4 + payloadLen] = (uint8_t)(crc & 0xFF);
+    }
 
     return (size_t)(5 + payloadLen);
 }

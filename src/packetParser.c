@@ -4,14 +4,14 @@
  *
  * @author Abhishek
  *
- * @date 2024-06-15
+ * @date July 2026
  ******************************************************************************/
 
 #include <packetParser.h>
 
 /**
  * @brief Parse an example packet.
- * 
+ *
  * @details This function parses an example packet, extracting the payload length,
  *         payload data, and validating the CRC checksum. It checks for valid packet
  *         structure and integrity.
@@ -19,9 +19,9 @@
  * @param packet Pointer to the packet data.
  * @param packetLen Length of the packet data.
  * @param parsedPkt Pointer to the structure to store the parsed packet information.
- * 
+ *
  * @exception None
- * 
+ *
  * @return PacketStatus_t Status of the parsing operation.
  */
 PacketStatus_t parseExamplePkt(const uint8_t *packet, size_t packetLen, ParsedExamplePkt_t *parsedPkt)
@@ -52,10 +52,14 @@ PacketStatus_t parseExamplePkt(const uint8_t *packet, size_t packetLen, ParsedEx
 
     const uint8_t *payLoad = &packet[3];
     uint16_t receivedCrc = ((uint16_t)packet[3 + payLoadLen] << 8) | packet[4 + payLoadLen];
-    uint16_t calculatedCrc = crc16Calculate(packet, 3 + payLoadLen);
-    if (calculatedCrc != receivedCrc)
+    uint16_t calculatedCrc = 0;
+    CRC16_Status_t crcSts = crc16Compute(packet, 3 + payLoadLen, &calculatedCrc);
+    if (CRC16_SUCCESS == crcSts)
     {
-        return PACKET_STATUS_INVALID_CRC;
+        if (calculatedCrc != receivedCrc)
+        {
+            return PACKET_STATUS_INVALID_CRC;
+        }
     }
 
     parsedPkt->payLoadLen = payLoadLen;
@@ -63,6 +67,5 @@ PacketStatus_t parseExamplePkt(const uint8_t *packet, size_t packetLen, ParsedEx
     parsedPkt->isCkSumValid = true;
     return PACKET_STATUS_OK;
 }
-
 
 /****************************************END OF packetParser.c****************************************/

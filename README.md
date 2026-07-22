@@ -54,16 +54,16 @@ The purpose of this project is to understand embedded software architecture by i
 
 ## Build
 
-cmake -S . -B builds
-cmake --build builds/ --target all
+- cmake -S . -B builds
+- cmake --build builds/ --target all
 
 ## Run Tests
 
 cd builds
-./bitUtilsTest 
-./crc16Test
-./ringBufferTest
-./packetParserTest
+- ./bitUtilsTest 
+- ./crc16Test
+- ./ringBufferTest
+- ./packetParserTest
 
 ---
 

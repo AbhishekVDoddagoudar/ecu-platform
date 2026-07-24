@@ -2,8 +2,15 @@
  * @file   testRingBuffer.c
  * @brief  Unit tests for ring buffer utilities (ringBuffer.h).
  *
- * @author Abhishek Doddagoudar
+ * @details
+ * ringBuffer.c uses a generic, element-size-based API: ringBufferInit takes
+ * (storage, capacity, elementSize), and Push/Pop/Peek all take void*
+ * pointers to a caller-supplied element rather than a raw byte value. All
+ * status codes are RING_BUFFER_ERROR_* / RING_BUFFER_SUCCESS -- there is no
+ * RING_BUFFER_NULL_POINTER, RING_BUFFER_FULL, RING_BUFFER_EMPTY, or
+ * RING_BUFFER_INVALID_PARAMETER (those names never existed in this API).
  *
+ * @author Abhishek Doddagoudar
  * @date   July 2026
  ******************************************************************************/
 
@@ -32,62 +39,72 @@ static int passedTests = 0;
 
 static void testInit(void)
 {
-    printf("ringBufferInit:\n");
-
     RingBuffer_t rb;
     uint8_t storage[8];
 
-    TEST_ASSERT(ringBufferInit(&rb, storage, sizeof(storage)) == RING_BUFFER_OK,
-                "init with valid buffer and non-zero size succeeds");
+    printf("\nringBufferInit:\n");
+
+    TEST_ASSERT(ringBufferInit(&rb, storage, sizeof(storage), 1U) == RING_BUFFER_SUCCESS,
+                "init with valid storage, capacity, and elementSize succeeds");
     TEST_ASSERT(rb.buffer == storage, "buffer pointer is stored correctly");
     TEST_ASSERT(rb.capacity == sizeof(storage), "capacity is stored correctly");
-    TEST_ASSERT(rb.head == 0, "head starts at 0");
-    TEST_ASSERT(rb.tail == 0, "tail starts at 0");
+    TEST_ASSERT(rb.elementSize == 1U, "elementSize is stored correctly");
+    TEST_ASSERT(rb.head == 0U, "head starts at 0");
+    TEST_ASSERT(rb.tail == 0U, "tail starts at 0");
 
-    TEST_ASSERT(ringBufferInit(NULL, storage, sizeof(storage)) == RING_BUFFER_INVALID_PARAMETER,
-                "init with NULL ringBuffer pointer returns RING_BUFFER_INVALID_PARAMETER");
-    TEST_ASSERT(ringBufferInit(&rb, NULL, sizeof(storage)) == RING_BUFFER_INVALID_PARAMETER,
-                "init with NULL buffer pointer returns RING_BUFFER_INVALID_PARAMETER");
-    TEST_ASSERT(ringBufferInit(&rb, storage, 0) == RING_BUFFER_INVALID_PARAMETER,
-                "init with zero size returns RING_BUFFER_INVALID_PARAMETER");
+    TEST_ASSERT(ringBufferInit(NULL, storage, sizeof(storage), 1U) == RING_BUFFER_ERROR_NULL_POINTER,
+                "init with NULL ringBuffer pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+    TEST_ASSERT(ringBufferInit(&rb, NULL, sizeof(storage), 1U) == RING_BUFFER_ERROR_NULL_POINTER,
+                "init with NULL storage pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+    TEST_ASSERT(ringBufferInit(&rb, storage, 0U, 1U) == RING_BUFFER_ERROR_INVALID_CAPACITY,
+                "init with capacity 0 returns RING_BUFFER_ERROR_INVALID_CAPACITY");
+    TEST_ASSERT(ringBufferInit(&rb, storage, 1U, 1U) == RING_BUFFER_ERROR_INVALID_CAPACITY,
+                "init with capacity 1 returns RING_BUFFER_ERROR_INVALID_CAPACITY (need >= 2 to distinguish full/empty)");
+    TEST_ASSERT(ringBufferInit(&rb, storage, sizeof(storage), 0U) == RING_BUFFER_ERROR_INVALID_ELEMENT_SIZE,
+                "init with elementSize 0 returns RING_BUFFER_ERROR_INVALID_ELEMENT_SIZE");
 }
 
 static void testPushPopBasic(void)
 {
-    printf("ringBufferPush / ringBufferPop basic:\n");
-
     RingBuffer_t rb;
     uint8_t storage[4];
-    ringBufferInit(&rb, storage, sizeof(storage));
+    uint8_t valueIn = 0xAAU;
+    uint8_t valueOut = 0U;
 
-    TEST_ASSERT(ringBufferPush(&rb, 0xAAU) == RING_BUFFER_OK, "push a byte into an empty buffer succeeds");
+    printf("\nringBufferPush / ringBufferPop basic:\n");
 
-    uint8_t data = 0;
-    TEST_ASSERT(ringBufferPop(&rb, &data) == RING_BUFFER_OK, "pop from a non-empty buffer succeeds");
-    TEST_ASSERT(data == 0xAAU, "popped byte matches the byte that was pushed");
+    ringBufferInit(&rb, storage, sizeof(storage), sizeof(uint8_t));
 
-    TEST_ASSERT(ringBufferPop(&rb, &data) == RING_BUFFER_EMPTY,
-                "popping from a now-empty buffer returns RING_BUFFER_EMPTY");
+    TEST_ASSERT(ringBufferPush(&rb, &valueIn) == RING_BUFFER_SUCCESS, "push a byte into an empty buffer succeeds");
+
+    TEST_ASSERT(ringBufferPop(&rb, &valueOut) == RING_BUFFER_SUCCESS, "pop from a non-empty buffer succeeds");
+    TEST_ASSERT(valueOut == 0xAAU, "popped byte matches the byte that was pushed");
+
+    TEST_ASSERT(ringBufferPop(&rb, &valueOut) == RING_BUFFER_ERROR_EMPTY,
+                "popping from a now-empty buffer returns RING_BUFFER_ERROR_EMPTY");
 }
 
 static void testPushPopOrderingFIFO(void)
 {
-    printf("ringBufferPush / ringBufferPop FIFO ordering:\n");
-
     RingBuffer_t rb;
     uint8_t storage[8];
-    ringBufferInit(&rb, storage, sizeof(storage));
+    const uint8_t values[] = {1U, 2U, 3U, 4U, 5U};
+    size_t count = sizeof(values) / sizeof(values[0]);
+    int inOrder = 1;
+    size_t i;
 
-    const uint8_t values[] = {1, 2, 3, 4, 5};
-    for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); i++)
+    printf("\nringBufferPush / ringBufferPop FIFO ordering:\n");
+
+    ringBufferInit(&rb, storage, sizeof(storage), sizeof(uint8_t));
+
+    for (i = 0U; i < count; i++)
     {
-        TEST_ASSERT(ringBufferPush(&rb, values[i]) == RING_BUFFER_OK, "push value into buffer succeeds");
+        TEST_ASSERT(ringBufferPush(&rb, &values[i]) == RING_BUFFER_SUCCESS, "push value into buffer succeeds");
     }
 
-    int inOrder = 1;
-    for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); i++)
+    for (i = 0U; i < count; i++)
     {
-        uint8_t data = 0;
+        uint8_t data = 0U;
         ringBufferPop(&rb, &data);
         if (data != values[i])
         {
@@ -100,163 +117,226 @@ static void testPushPopOrderingFIFO(void)
 
 static void testFullBuffer(void)
 {
-    printf("ringBufferPush on a full buffer:\n");
-
     RingBuffer_t rb;
     uint8_t storage[4]; /* usable capacity is 3, due to the one-empty-slot technique */
-    ringBufferInit(&rb, storage, sizeof(storage));
+    uint8_t one = 1U, two = 2U, three = 3U, four = 4U;
+    uint8_t data = 0U;
 
-    TEST_ASSERT(ringBufferPush(&rb, 1) == RING_BUFFER_OK, "push 1st byte succeeds");
-    TEST_ASSERT(ringBufferPush(&rb, 2) == RING_BUFFER_OK, "push 2nd byte succeeds");
-    TEST_ASSERT(ringBufferPush(&rb, 3) == RING_BUFFER_OK, "push 3rd byte fills the usable capacity");
+    printf("\nringBufferPush on a full buffer:\n");
+
+    ringBufferInit(&rb, storage, sizeof(storage), sizeof(uint8_t));
+
+    TEST_ASSERT(ringBufferPush(&rb, &one) == RING_BUFFER_SUCCESS, "push 1st byte succeeds");
+    TEST_ASSERT(ringBufferPush(&rb, &two) == RING_BUFFER_SUCCESS, "push 2nd byte succeeds");
+    TEST_ASSERT(ringBufferPush(&rb, &three) == RING_BUFFER_SUCCESS, "push 3rd byte fills the usable capacity");
 
     TEST_ASSERT(ringBufferIsFull(&rb) == true, "buffer reports full once usable capacity is reached");
-    TEST_ASSERT(ringBufferPush(&rb, 4) == RING_BUFFER_FULL, "pushing to a full buffer returns RING_BUFFER_FULL");
+    TEST_ASSERT(ringBufferPush(&rb, &four) == RING_BUFFER_ERROR_FULL, "pushing to a full buffer returns RING_BUFFER_ERROR_FULL");
 
-    uint8_t data = 0;
     ringBufferPop(&rb, &data);
     TEST_ASSERT(ringBufferIsFull(&rb) == false, "buffer is no longer full after a pop frees a slot");
-    TEST_ASSERT(ringBufferPush(&rb, 4) == RING_BUFFER_OK, "push succeeds again after freeing a slot");
+    TEST_ASSERT(ringBufferPush(&rb, &four) == RING_BUFFER_SUCCESS, "push succeeds again after freeing a slot");
 }
 
 static void testEmptyBuffer(void)
 {
-    printf("ringBufferIsEmpty / ringBufferPop on an empty buffer:\n");
-
     RingBuffer_t rb;
     uint8_t storage[4];
-    ringBufferInit(&rb, storage, sizeof(storage));
+    uint8_t data = 0U;
+    uint8_t pushValue = 0x11U;
+
+    printf("\nringBufferIsEmpty / ringBufferPop on an empty buffer:\n");
+
+    ringBufferInit(&rb, storage, sizeof(storage), sizeof(uint8_t));
 
     TEST_ASSERT(ringBufferIsEmpty(&rb) == true, "freshly initialized buffer is empty");
 
-    uint8_t data = 0;
-    TEST_ASSERT(ringBufferPop(&rb, &data) == RING_BUFFER_EMPTY, "pop on an empty buffer returns RING_BUFFER_EMPTY");
-    TEST_ASSERT(ringBufferPeek(&rb, &data) == RING_BUFFER_EMPTY, "peek on an empty buffer returns RING_BUFFER_EMPTY");
+    TEST_ASSERT(ringBufferPop(&rb, &data) == RING_BUFFER_ERROR_EMPTY, "pop on an empty buffer returns RING_BUFFER_ERROR_EMPTY");
+    TEST_ASSERT(ringBufferPeek(&rb, &data) == RING_BUFFER_ERROR_EMPTY, "peek on an empty buffer returns RING_BUFFER_ERROR_EMPTY");
 
-    ringBufferPush(&rb, 0x11U);
+    ringBufferPush(&rb, &pushValue);
     TEST_ASSERT(ringBufferIsEmpty(&rb) == false, "buffer is not empty after a push");
 }
 
 static void testPeekDoesNotRemove(void)
 {
-    printf("ringBufferPeek:\n");
-
     RingBuffer_t rb;
     uint8_t storage[4];
-    ringBufferInit(&rb, storage, sizeof(storage));
+    uint8_t pushValue = 0x42U;
+    uint8_t peeked = 0U;
+    uint8_t popped = 0U;
+    size_t size = 0U;
 
-    ringBufferPush(&rb, 0x42U);
+    printf("\nringBufferPeek:\n");
 
-    uint8_t peeked = 0;
-    TEST_ASSERT(ringBufferPeek(&rb, &peeked) == RING_BUFFER_OK, "peek on a non-empty buffer succeeds");
+    ringBufferInit(&rb, storage, sizeof(storage), sizeof(uint8_t));
+    ringBufferPush(&rb, &pushValue);
+
+    TEST_ASSERT(ringBufferPeek(&rb, &peeked) == RING_BUFFER_SUCCESS, "peek on a non-empty buffer succeeds");
     TEST_ASSERT(peeked == 0x42U, "peeked value matches the front of the buffer");
 
-    size_t size = 0;
     ringBufferGetSize(&rb, &size);
-    TEST_ASSERT(size == 1, "size is unchanged after a peek (peek does not remove data)");
+    TEST_ASSERT(size == 1U, "size is unchanged after a peek (peek does not remove data)");
 
-    uint8_t popped = 0;
     ringBufferPop(&rb, &popped);
     TEST_ASSERT(popped == peeked, "the value popped afterward matches what was peeked");
 }
 
 static void testClear(void)
 {
-    printf("ringBufferClear:\n");
-
     RingBuffer_t rb;
     uint8_t storage[4];
-    ringBufferInit(&rb, storage, sizeof(storage));
+    uint8_t one = 1U, two = 2U, nine = 9U;
+    size_t size = 0U;
 
-    ringBufferPush(&rb, 1);
-    ringBufferPush(&rb, 2);
+    printf("\nringBufferClear:\n");
 
-    TEST_ASSERT(ringBufferClear(&rb) == RING_BUFFER_OK, "clear on a non-empty buffer succeeds");
+    ringBufferInit(&rb, storage, sizeof(storage), sizeof(uint8_t));
+    ringBufferPush(&rb, &one);
+    ringBufferPush(&rb, &two);
+
+    TEST_ASSERT(ringBufferClear(&rb) == RING_BUFFER_SUCCESS, "clear on a non-empty buffer succeeds");
     TEST_ASSERT(ringBufferIsEmpty(&rb) == true, "buffer is empty after clear");
 
-    size_t size = 0;
     ringBufferGetSize(&rb, &size);
-    TEST_ASSERT(size == 0, "size is 0 after clear");
+    TEST_ASSERT(size == 0U, "size is 0 after clear");
 
-    TEST_ASSERT(ringBufferPush(&rb, 9) == RING_BUFFER_OK, "buffer is usable again after clear");
+    TEST_ASSERT(ringBufferPush(&rb, &nine) == RING_BUFFER_SUCCESS, "buffer is usable again after clear");
 }
 
 static void testGetSize(void)
 {
-    printf("ringBufferGetSize:\n");
-
     RingBuffer_t rb;
     uint8_t storage[8];
-    ringBufferInit(&rb, storage, sizeof(storage));
+    uint8_t one = 1U, two = 2U, three = 3U;
+    uint8_t data = 0U;
+    size_t size = 0U;
 
-    size_t size = 0;
-    TEST_ASSERT(ringBufferGetSize(&rb, &size) == RING_BUFFER_OK, "getSize on a valid buffer succeeds");
-    TEST_ASSERT(size == 0, "size of a freshly initialized buffer is 0");
+    printf("\nringBufferGetSize:\n");
 
-    ringBufferPush(&rb, 1);
-    ringBufferPush(&rb, 2);
-    ringBufferPush(&rb, 3);
+    ringBufferInit(&rb, storage, sizeof(storage), sizeof(uint8_t));
+
+    TEST_ASSERT(ringBufferGetSize(&rb, &size) == RING_BUFFER_SUCCESS, "getSize on a valid buffer succeeds");
+    TEST_ASSERT(size == 0U, "size of a freshly initialized buffer is 0");
+
+    ringBufferPush(&rb, &one);
+    ringBufferPush(&rb, &two);
+    ringBufferPush(&rb, &three);
     ringBufferGetSize(&rb, &size);
-    TEST_ASSERT(size == 3, "size reflects the number of pushed elements");
+    TEST_ASSERT(size == 3U, "size reflects the number of pushed elements");
 
-    uint8_t data = 0;
     ringBufferPop(&rb, &data);
     ringBufferGetSize(&rb, &size);
-    TEST_ASSERT(size == 2, "size decreases after a pop");
+    TEST_ASSERT(size == 2U, "size decreases after a pop");
 
-    TEST_ASSERT(ringBufferGetSize(NULL, &size) == RING_BUFFER_NULL_POINTER,
-                "getSize with NULL ringBuffer pointer returns RING_BUFFER_NULL_POINTER");
-    TEST_ASSERT(ringBufferGetSize(&rb, NULL) == RING_BUFFER_NULL_POINTER,
-                "getSize with NULL size pointer returns RING_BUFFER_NULL_POINTER");
+    TEST_ASSERT(ringBufferGetSize(NULL, &size) == RING_BUFFER_ERROR_NULL_POINTER,
+                "getSize with NULL ringBuffer pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+    TEST_ASSERT(ringBufferGetSize(&rb, NULL) == RING_BUFFER_ERROR_NULL_POINTER,
+                "getSize with NULL size pointer returns RING_BUFFER_ERROR_NULL_POINTER");
 }
 
 static void testGetCapacity(void)
 {
-    printf("ringBufferGetCapacity:\n");
-
     RingBuffer_t rb;
     uint8_t storage[8];
-    ringBufferInit(&rb, storage, sizeof(storage));
+    size_t capacity = 0U;
 
-    size_t capacity = 0;
-    TEST_ASSERT(ringBufferGetCapacity(&rb, &capacity) == RING_BUFFER_OK, "getCapacity on a valid buffer succeeds");
-    TEST_ASSERT(capacity == sizeof(storage) - 1,
+    printf("\nringBufferGetCapacity:\n");
+
+    ringBufferInit(&rb, storage, sizeof(storage), sizeof(uint8_t));
+
+    TEST_ASSERT(ringBufferGetCapacity(&rb, &capacity) == RING_BUFFER_SUCCESS, "getCapacity on a valid buffer succeeds");
+    TEST_ASSERT(capacity == sizeof(storage) - 1U,
                 "usable capacity is one less than the underlying storage size");
 
-    TEST_ASSERT(ringBufferGetCapacity(NULL, &capacity) == RING_BUFFER_NULL_POINTER,
-                "getCapacity with NULL ringBuffer pointer returns RING_BUFFER_NULL_POINTER");
-    TEST_ASSERT(ringBufferGetCapacity(&rb, NULL) == RING_BUFFER_NULL_POINTER,
-                "getCapacity with NULL capacity pointer returns RING_BUFFER_NULL_POINTER");
+    TEST_ASSERT(ringBufferGetCapacity(NULL, &capacity) == RING_BUFFER_ERROR_NULL_POINTER,
+                "getCapacity with NULL ringBuffer pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+    TEST_ASSERT(ringBufferGetCapacity(&rb, NULL) == RING_BUFFER_ERROR_NULL_POINTER,
+                "getCapacity with NULL capacity pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+}
+
+static void testGetAvailableSpace(void)
+{
+    RingBuffer_t rb;
+    uint8_t storage[4]; /* usable capacity 3 */
+    uint8_t one = 1U;
+    uint8_t data = 0U;
+    size_t available = 0U;
+
+    printf("\nringBufferGetAvailableSpace:\n");
+
+    ringBufferInit(&rb, storage, sizeof(storage), sizeof(uint8_t));
+
+    TEST_ASSERT(ringBufferGetAvailableSpace(&rb, &available) == RING_BUFFER_SUCCESS,
+                "getAvailableSpace on a valid buffer succeeds");
+    TEST_ASSERT(available == 3U, "empty buffer reports (capacity - 1) available slots");
+
+    ringBufferPush(&rb, &one);
+    ringBufferGetAvailableSpace(&rb, &available);
+    TEST_ASSERT(available == 2U, "available space decreases by 1 after a push");
+
+    ringBufferPop(&rb, &data);
+    ringBufferGetAvailableSpace(&rb, &available);
+    TEST_ASSERT(available == 3U, "available space increases by 1 after a pop");
+
+    TEST_ASSERT(ringBufferGetAvailableSpace(NULL, &available) == RING_BUFFER_ERROR_NULL_POINTER,
+                "getAvailableSpace with NULL ringBuffer pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+    TEST_ASSERT(ringBufferGetAvailableSpace(&rb, NULL) == RING_BUFFER_ERROR_NULL_POINTER,
+                "getAvailableSpace with NULL availableSpace pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+}
+
+static void testSizePlusAvailableEqualsCapacity(void)
+{
+    RingBuffer_t rb;
+    uint8_t storage[8]; /* usable capacity 7 */
+    uint8_t values[] = {1U, 2U, 3U};
+    size_t size = 0U, available = 0U, capacity = 0U;
+    size_t i;
+
+    printf("\ncross-check: size + availableSpace == usable capacity at every point:\n");
+
+    ringBufferInit(&rb, storage, sizeof(storage), sizeof(uint8_t));
+    ringBufferGetCapacity(&rb, &capacity);
+
+    for (i = 0U; i < sizeof(values) / sizeof(values[0]); i++)
+    {
+        ringBufferPush(&rb, &values[i]);
+        ringBufferGetSize(&rb, &size);
+        ringBufferGetAvailableSpace(&rb, &available);
+        TEST_ASSERT(size + available == capacity, "size + availableSpace == capacity holds after each push");
+    }
 }
 
 static void testWraparound(void)
 {
-    printf("wraparound behavior (head/tail wrapping past the end of storage):\n");
-
     RingBuffer_t rb;
     uint8_t storage[4]; /* usable capacity 3 */
-    ringBufferInit(&rb, storage, sizeof(storage));
+    int wrappedCorrectly = 1;
+    uint8_t nextValue = 0U;
+    int cycle, i;
+
+    printf("\nwraparound behavior (head/tail wrapping past the end of storage):\n");
+
+    ringBufferInit(&rb, storage, sizeof(storage), sizeof(uint8_t));
 
     /* Fill, drain, and refill repeatedly so head/tail wrap around the
      * underlying storage several times, exercising the modulo wraparound
      * logic in push/pop. */
-    int wrappedCorrectly = 1;
-    uint8_t nextValue = 0;
-    for (int cycle = 0; cycle < 5; cycle++)
+    for (cycle = 0; cycle < 5; cycle++)
     {
-        for (int i = 0; i < 3; i++)
+        for (i = 0; i < 3; i++)
         {
-            if (ringBufferPush(&rb, nextValue) != RING_BUFFER_OK)
+            if (ringBufferPush(&rb, &nextValue) != RING_BUFFER_SUCCESS)
             {
                 wrappedCorrectly = 0;
             }
             nextValue++;
         }
 
-        for (int i = 0; i < 3; i++)
+        for (i = 0; i < 3; i++)
         {
-            uint8_t data = 0;
-            if (ringBufferPop(&rb, &data) != RING_BUFFER_OK)
+            uint8_t data = 0U;
+            if (ringBufferPop(&rb, &data) != RING_BUFFER_SUCCESS)
             {
                 wrappedCorrectly = 0;
             }
@@ -267,28 +347,63 @@ static void testWraparound(void)
     TEST_ASSERT(ringBufferIsEmpty(&rb) == true, "buffer is empty after equal pushes and pops across wraparound");
 }
 
-static void testNullPointerHandling(void)
+static void testGenericElementType(void)
 {
-    printf("negative: NULL pointer handling across the API:\n");
+    /* Exercises the generic-element design: elementSize > 1, using a
+     * multi-byte struct rather than a single uint8_t. This is the whole
+     * reason RingBuffer_t carries elementSize instead of being byte-only. */
+    typedef struct
+    {
+        uint16_t id;
+        uint16_t value;
+    } Sample_t;
 
     RingBuffer_t rb;
+    Sample_t storage[4]; /* usable capacity 3 elements */
+    Sample_t in1 = {1U, 100U};
+    Sample_t in2 = {2U, 200U};
+    Sample_t out = {0U, 0U};
+
+    printf("\ngeneric element support (elementSize > 1, struct elements):\n");
+
+    TEST_ASSERT(ringBufferInit(&rb, storage, 4U, sizeof(Sample_t)) == RING_BUFFER_SUCCESS,
+                "init with a multi-byte struct element type succeeds");
+
+    TEST_ASSERT(ringBufferPush(&rb, &in1) == RING_BUFFER_SUCCESS, "push a struct element succeeds");
+    TEST_ASSERT(ringBufferPush(&rb, &in2) == RING_BUFFER_SUCCESS, "push a second struct element succeeds");
+
+    TEST_ASSERT(ringBufferPop(&rb, &out) == RING_BUFFER_SUCCESS, "pop a struct element succeeds");
+    TEST_ASSERT((out.id == 1U) && (out.value == 100U), "popped struct matches the first struct pushed (FIFO)");
+
+    ringBufferPop(&rb, &out);
+    TEST_ASSERT((out.id == 2U) && (out.value == 200U), "second popped struct matches the second struct pushed");
+}
+
+static void testNullPointerHandling(void)
+{
+    RingBuffer_t rb;
     uint8_t storage[4];
-    ringBufferInit(&rb, storage, sizeof(storage));
+    uint8_t data = 0U;
+    uint8_t pushValue = 1U;
 
-    uint8_t data = 0;
+    printf("\nnegative: NULL pointer handling across the API:\n");
 
-    TEST_ASSERT(ringBufferPush(NULL, 1) == RING_BUFFER_NULL_POINTER,
-                "push with NULL ringBuffer pointer returns RING_BUFFER_NULL_POINTER");
-    TEST_ASSERT(ringBufferPop(NULL, &data) == RING_BUFFER_NULL_POINTER,
-                "pop with NULL ringBuffer pointer returns RING_BUFFER_NULL_POINTER");
-    TEST_ASSERT(ringBufferPop(&rb, NULL) == RING_BUFFER_NULL_POINTER,
-                "pop with NULL data pointer returns RING_BUFFER_NULL_POINTER");
-    TEST_ASSERT(ringBufferPeek(NULL, &data) == RING_BUFFER_NULL_POINTER,
-                "peek with NULL ringBuffer pointer returns RING_BUFFER_NULL_POINTER");
-    TEST_ASSERT(ringBufferPeek(&rb, NULL) == RING_BUFFER_NULL_POINTER,
-                "peek with NULL data pointer returns RING_BUFFER_NULL_POINTER");
-    TEST_ASSERT(ringBufferClear(NULL) == RING_BUFFER_NULL_POINTER,
-                "clear with NULL ringBuffer pointer returns RING_BUFFER_NULL_POINTER");
+    ringBufferInit(&rb, storage, sizeof(storage), sizeof(uint8_t));
+
+    TEST_ASSERT(ringBufferPush(NULL, &pushValue) == RING_BUFFER_ERROR_NULL_POINTER,
+                "push with NULL ringBuffer pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+    TEST_ASSERT(ringBufferPush(&rb, NULL) == RING_BUFFER_ERROR_NULL_POINTER,
+                "push with NULL data pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+    TEST_ASSERT(ringBufferPop(NULL, &data) == RING_BUFFER_ERROR_NULL_POINTER,
+                "pop with NULL ringBuffer pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+    TEST_ASSERT(ringBufferPop(&rb, NULL) == RING_BUFFER_ERROR_NULL_POINTER,
+                "pop with NULL data pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+    TEST_ASSERT(ringBufferPeek(NULL, &data) == RING_BUFFER_ERROR_NULL_POINTER,
+                "peek with NULL ringBuffer pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+    TEST_ASSERT(ringBufferPeek(&rb, NULL) == RING_BUFFER_ERROR_NULL_POINTER,
+                "peek with NULL data pointer returns RING_BUFFER_ERROR_NULL_POINTER");
+    TEST_ASSERT(ringBufferClear(NULL) == RING_BUFFER_ERROR_NULL_POINTER,
+                "clear with NULL ringBuffer pointer returns RING_BUFFER_ERROR_NULL_POINTER");
 
     TEST_ASSERT(ringBufferIsFull(NULL) == false, "isFull with NULL ringBuffer pointer returns false");
     TEST_ASSERT(ringBufferIsEmpty(NULL) == true, "isEmpty with NULL ringBuffer pointer returns true");
@@ -296,7 +411,7 @@ static void testNullPointerHandling(void)
 
 int main(void)
 {
-    printf("Running ringBuffer tests...\n\n");
+    printf("Running ringBuffer tests...\n");
 
     testInit();
     testPushPopBasic();
@@ -307,7 +422,10 @@ int main(void)
     testClear();
     testGetSize();
     testGetCapacity();
+    testGetAvailableSpace();
+    testSizePlusAvailableEqualsCapacity();
     testWraparound();
+    testGenericElementType();
     testNullPointerHandling();
 
     printf("\n%d / %d tests passed.\n", passedTests, totalTests);

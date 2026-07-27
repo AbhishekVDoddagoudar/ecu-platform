@@ -15,6 +15,7 @@ add_library(ecuplatform STATIC
     src/crc16.c
     src/packetParser.c
     src/ringBuffer.c
+    src/packetBuilder.c
 
 )
 
@@ -63,3 +64,12 @@ add_executable(ringBufferTest
 target_link_libraries(ringBufferTest
     PRIVATE ecuplatform
 )
+
+add_executable(packetbuildertest
+    tests/packetbuildertest.c
+)
+
+target_link_libraries(packetbuildertest
+    PRIVATE ecuplatform
+)
+

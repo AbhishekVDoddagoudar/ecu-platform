@@ -16,6 +16,7 @@ add_library(ecuplatform STATIC
     src/packetParser.c
     src/ringBuffer.c
     src/packetBuilder.c
+    src/swTimer.c
 
 )
 
@@ -70,6 +71,15 @@ add_executable(packetbuildertest
 )
 
 target_link_libraries(packetbuildertest
+    PRIVATE ecuplatform
+)
+
+
+add_executable(swTimerTest
+    tests/swTimerTest.c
+)
+
+target_link_libraries(swTimerTest
     PRIVATE ecuplatform
 )
 

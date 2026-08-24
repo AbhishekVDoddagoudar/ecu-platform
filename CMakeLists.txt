@@ -17,6 +17,7 @@ add_library(ecuplatform STATIC
     src/ringBuffer.c
     src/packetBuilder.c
     src/swTimer.c
+    src/memoryPool.c
 
 )
 
@@ -83,3 +84,10 @@ target_link_libraries(swTimerTest
     PRIVATE ecuplatform
 )
 
+add_executable(memoryPool
+    tests/memoryPoolTest.c
+)
+
+target_link_libraries(memoryPool
+    PRIVATE ecuplatform
+)

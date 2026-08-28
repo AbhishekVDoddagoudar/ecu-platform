@@ -107,7 +107,7 @@ PacketParserStatus_t packetParserParse(const uint8_t *rawData, size_t rawLength,
 
     if(crcSts != CRC16_SUCCESS)
     {
-        return CRC16_ERROR_MISMATCH;
+        return PACKET_PARSER_ERROR_CRC_MISMATCH;
     }
 
     size_t crcOffset = (size_t)PACKET_OFFSET_LENGTH + crcRegionSize;

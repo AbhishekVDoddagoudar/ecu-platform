@@ -18,6 +18,7 @@ add_library(ecuplatform STATIC
     src/packetBuilder.c
     src/swTimer.c
     src/memoryPool.c
+    src/crc32.c
 
 )
 
@@ -89,5 +90,13 @@ add_executable(memoryPool
 )
 
 target_link_libraries(memoryPool
+    PRIVATE ecuplatform
+)
+
+add_executable(crc32Test
+    tests/crc32Test.c
+)
+
+target_link_libraries(crc32Test
     PRIVATE ecuplatform
 )

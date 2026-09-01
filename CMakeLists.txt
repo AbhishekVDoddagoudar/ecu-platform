@@ -19,6 +19,7 @@ add_library(ecuplatform STATIC
     src/swTimer.c
     src/memoryPool.c
     src/crc32.c
+    src/logger.c
 
 )
 
@@ -85,11 +86,11 @@ target_link_libraries(swTimerTest
     PRIVATE ecuplatform
 )
 
-add_executable(memoryPool
+add_executable(memoryPoolTest
     tests/memoryPoolTest.c
 )
 
-target_link_libraries(memoryPool
+target_link_libraries(memoryPoolTest
     PRIVATE ecuplatform
 )
 
@@ -98,5 +99,21 @@ add_executable(crc32Test
 )
 
 target_link_libraries(crc32Test
+    PRIVATE ecuplatform
+)
+
+add_executable(loggerTest
+    tests/loggerTest.c
+)
+
+target_link_libraries(loggerTest
+    PRIVATE ecuplatform
+)
+
+add_executable(loggerCompileTimeTest
+    tests/loggerCompileTimeTest.c
+)
+
+target_link_libraries(loggerCompileTimeTest
     PRIVATE ecuplatform
 )

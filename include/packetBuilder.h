@@ -65,7 +65,8 @@ typedef enum
     PACKET_BUILDER_SUCCESS = 0,
     PACKET_BUILDER_ERROR_NULL_POINTER,
     PACKET_BUILDER_ERROR_INVALID_LENGTH,
-    PACKET_BUILDER_ERROR_BUFFER_TOO_SMALL
+    PACKET_BUILDER_ERROR_BUFFER_TOO_SMALL,
+    PACKET_BUILDER_ERROR_CRC_FAILURE
 } PacketBuilderStatus_t;
 
 /**
@@ -97,6 +98,16 @@ typedef enum
  *         PACKET_MAX_PAYLOAD_SIZE.
  * @retval PACKET_BUILDER_ERROR_BUFFER_TOO_SMALL packetBufferSize is smaller
  *         than the total size the resulting packet requires.
+ * @retval PACKET_BUILDER_ERROR_CRC_FAILURE The internal CRC-16 computation
+ *         over the assembled Length+Command+Payload region failed. This is
+ *         a defensive code path, not expected to be reachable in practice:
+ *         by this point packetBuffer has already been confirmed non-NULL
+ *         and the CRC region size is always > 0, so crc16Compute()'s only
+ *         possible failure (a NULL data pointer with a non-zero length) is
+ *         not something these call-site conditions can produce. Distinct
+ *         from PACKET_PARSER_ERROR_CRC_MISMATCH by design -- there is no
+ *         received CRC to mismatch against during construction, only a
+ *         computation that could (in principle) fail.
  */
 PacketBuilderStatus_t packetBuilderBuildPacket(uint8_t commandId,
                                                const uint8_t *payload,

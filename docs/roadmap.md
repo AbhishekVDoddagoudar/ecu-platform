@@ -25,16 +25,19 @@ Status: Completed
 ---
 
 ## Milestone 1 - Embedded Utility Library
-Status: In Progress
+Status: Completed
 
 Modules
 
-- [ ] Bit Utilities
-- [ ] Ring Buffer
-- [ ] CRC16
-- [ ] Packet Parser
-- [ ] Memory Pool
-- [ ] Logger
+- [x] Bit Utilities
+- [x] Ring Buffer
+- [x] CRC16
+- [x] Packet Parser
+- [x] Packet Builder
+- [x] Software Timer
+- [x] Memory Pool
+- [x] CRC32
+- [x] Logger
 
 Skills
 
@@ -43,6 +46,9 @@ Skills
 - API design
 - Error handling
 - Modular programming
+- CRC/checksum algorithms
+- Callback-driven timer management
+- Compile-time vs. runtime configuration trade-offs
 
 ---
 
@@ -74,7 +80,6 @@ Modules
 - [ ] Scheduler
 - [ ] Task Manager
 - [ ] Queue
-- [ ] Software Timer
 - [ ] Event Manager
 
 Skills
@@ -83,6 +88,11 @@ Skills
 - Scheduling
 - Synchronization
 - ISR communication
+
+Note: Software Timer was originally scoped under this milestone but was
+implemented and released as part of Milestone 1 (v0.7.0) instead, as a
+standalone embedded utility module rather than a full OS abstraction.
+See Milestone 1 above.
 
 ---
 
@@ -179,12 +189,16 @@ This project follows the following principles:
 
 Current Milestone
 
-Milestone 1 - Embedded Utility Library
+Milestone 1 - Embedded Utility Library (Completed)
 
-Current Module
+Next Milestone
 
-Bit Utilities
+Milestone 2 - CAN Communication Stack
+
+Next Module
+
+CAN Driver
 
 # Current Version
 
-v0.1.0
+v0.10.0

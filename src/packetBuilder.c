@@ -124,7 +124,7 @@ PacketBuilderStatus_t packetBuilderBuildPacket(uint8_t commandId,
 
     if(crcSts != CRC16_SUCCESS)
     {
-        return CRC16_ERROR_MISMATCH;
+        return PACKET_BUILDER_ERROR_CRC_FAILURE;
     }
 
     size_t crcOffset = (size_t)PACKET_OFFSET_LENGTH + crcRegionSize;
